@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lala Profit Calc</title>
+    <style>
+        :root { --bg: #f5f5f7; --card: #ffffff; --primary: #ff6b00; --text: #1d1d1f; --secondary: #8e8e93; --modal-bg: rgba(0,0,0,0.5); }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; min-height: 100vh; }
+        .card { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); width: 100%; max-width: 400px; box-sizing: border-box; position: relative; }
+        
+        /* Header & Lang */
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #fff5ed; padding-bottom: 10px; }
+        h2 { color: var(--primary); font-size: 1.1rem; margin: 0; }
+        #langSelect { padding: 5px 10px; border-radius: 6px; border: 1.5px solid #d1d1d6; font-size: 0.75rem; background: white; }
+
+        .section-title { font-size: 0.7rem; color: var(--secondary); text-transform: uppercase; margin: 15px 0 8px; letter-spacing: 0.5px; border-left: 3px solid var(--primary); padding-left: 8px; text-align: left; }
+        
+        /* Label & Info Icon */
+        label { display: flex; flex-direction: column; justify-content: flex-end; min-height: 40px; margin-bottom: 6px; font-size: 0.8rem; font-weight: 700; text-align: left; position: relative; }
+        .info-btn { display: inline-block; width: 14px; height: 14px; line-height: 14px; text-align: center; border-radius: 50%; background: #e0e0e0; color: #666; font-size: 10px; cursor: pointer; margin-left: 4px; font-weight: normal; vertical-align: middle; }
+        .unit { font-size: 0.65rem; color: var(--secondary); font-weight: normal; }
+
+        input { width: 100%; padding: 12px; border: 1.5px solid #d1d1d6; border-radius: 10px; box-sizing: border-box; font-size: 16px; -webkit-appearance: none; }
+        input:focus { border-color: var(--primary); outline: none; background: #fffaf5; }
+        .row { display: flex; gap: 12px; }
+        .row .input-group { flex: 1; min-width: 0; }
+
+        /* Modal / Popup Styles */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: var(--modal-bg); align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 20px; border-radius: 12px; max-width: 350px; width: 100%; position: relative; font-size: 0.9rem; line-height: 1.5; color: #444; }
+        .modal-close { position: absolute; top: 10px; right: 10px; font-size: 20px; cursor: pointer; color: #999; }
+        .modal-title { font-weight: bold; color: var(--primary); margin-bottom: 10px; display: block; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+
+        /* Results & Other UI remains same */
+        .result-area { margin-top: 15px; padding: 15px; border-radius: 12px; background: #fffaf5; border: 1px solid #ffdec7; display: none; }
+        .comp-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.8rem; }
+        .comp-table td { padding: 8px 0; border-bottom: 1px solid #eee; text-align: left; }
+        .comp-table td:last-child { text-align: right; font-weight: 600; }
+        #profitText { display: block; font-size: 2.2rem; color: var(--primary); font-weight: 800; text-align: center; }
+        .verdict { margin-top: 10px; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; text-align: center; }
+        .good { background: #34c759; color: white; }
+        .bad { background: #ff3b30; color: white; }
+        .neutral { background: #ffcc00; color: #1c1c1e; }
+        .disclaimer { margin-top: 15px; padding-top: 12px; border-top: 1px dotted #ccc; font-size: 0.62rem; color: var(--secondary); text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header-row">
+        <h2 id="ui-title">Lala Profit Calc</h2>
+        <select id="langSelect" onchange="setLang(this.value)">
+            <option value="en">English</option>
+            <option value="ms">B. Melayu</option>
+            <option value="zh">中文</option>
+        </select>
+    </div>
+    
+    <div class="section-title" id="ui-set-title">Settings</div>
+    <div class="row">
+        <div class="input-group">
+            <label>
+                <span><span id="ui-fuel">Fuel</span><span class="info-btn" onclick="showModal('fuel')">?</span></span>
+                <span class="unit">RM/KM</span>
+            </label>
+            <input type="number" id="fuelCost" step="0.01" placeholder="0.21" oninput="saveAndCalc()">
+        </div>
+        <div class="input-group">
+            <label>
+                <span><span id="ui-maint">Maint.</span><span class="info-btn" onclick="showModal('maint')">?</span></span>
+                <span class="unit">RM/KM</span>
+            </label>
+            <input type="number" id="maintCost" step="0.01" placeholder="0.05" oninput="saveAndCalc()">
+        </div>
+    </div>
+
+    <div class="section-title" id="ui-order-title">Order</div>
+    <div class="row">
+        <div class="input-group">
+            <label><span id="ui-fare">Fare</span> <span class="unit">(RM)</span></label>
+            <input type="number" id="amount" step="0.1" oninput="calculate()">
+        </div>
+        <div class="input-group">
+            <label><span id="ui-dist">Distance</span> <span class="unit">(KM)</span></label>
+            <input type="number" id="distance" step="0.1" oninput="calculate()">
+        </div>
+    </div>
+
+    <div id="resultArea" class="result-area">
+        <table class="comp-table">
+            <tr><td id="ui-t-gross">Total Fare (Gross)</td><td id="grossVal">RM 0.00</td></tr>
+            <tr><td id="ui-t-comm">Comm. (21%)</td><td id="commVal" style="color:#ff3b30">- RM 0.00</td></tr>
+            <tr><td id="ui-t-take">Take-Home (79%)</td><td id="takeHomeVal" style="color:#34c759">RM 0.00</td></tr>
+            <tr><td id="ui-t-cost">Total Costs</td><td id="costVal" style="color:#ff3b30">- RM 0.00</td></tr>
+        </table>
+        <div style="text-align:center">
+            <span style="font-size:0.7rem; color:var(--secondary)" id="ui-t-net">NET PROFIT</span>
+            <span id="profitText">RM 0.00</span>
+        </div>
+        <div id="verdictBox" class="verdict"></div>
+    </div>
+
+    <div class="disclaimer" id="ui-disclaimer">Estimates for reference only.</div>
+</div>
+
+<div id="infoModal" class="modal" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <span id="modal-title" class="modal-title">Calculation Guide</span>
+        <div id="modal-body"></div>
+    </div>
+</div>
+
+<script>
+    const i18n = {
+        en: {
+            title: "Lala Profit Calc", set: "Settings", order: "Order", fuel: "Fuel", maint: "Maint.",
+            fare: "Fare", dist: "Distance", tGross: "Total Fare (Gross)", tComm: "Comm. (21%)", tTake: "Take-Home (79%)",
+            tCost: "Total Costs", tNet: "NET PROFIT", disc: "Estimates for reference only. Actual profit varies by traffic & tolls.",
+            vBad: "❌ LOSS", vNeu: "⚠️ LOW PROFIT", vGood: "✅ GOOD TO GO",
+            fuelGuide: "<b>Formula:</b> Fuel Price (RM/L) ÷ Fuel Economy (KM/L).<br><br><i>Example:</i> RM2.05 ÷ 10 KM/L = <b>RM0.21/KM</b>",
+            maintGuide: "<b>Includes:</b> Tyres, Engine Oil, Repairs.<br><br>Sum up your yearly maintenance and divide by your yearly mileage. Typically <b>RM0.03 - RM0.08</b> per KM."
+        },
+        ms: {
+            title: "Kalkulator Untung", set: "Tetapan", order: "Pesanan", fuel: "Petrol", maint: "Senggara",
+            fare: "Tambang", dist: "Jarak", tGross: "Jumlah Tambang", tComm: "Komisyen (21%)", tTake: "Pendapatan Bersih",
+            tCost: "Jumlah Kos", tNet: "UNTUNG BERSIH", disc: "Anggaran sahaja. Untung sebenar bergantung pada trafik & tol.",
+            vBad: "❌ RUGI", vNeu: "⚠️ UNTUNG RENDAH", vGood: "✅ BERBALOI",
+            fuelGuide: "<b>Formula:</b> Harga Petrol (RM/L) ÷ Penggunaan Petrol (KM/L).<br><br><i>Contoh:</i> RM2.05 ÷ 10 KM/L = <b>RM0.21/KM</b>",
+            maintGuide: "<b>Termasuk:</b> Tayar, Minyak Enjin, Pembaikan.<br><br>Anggaran biasa adalah antara <b>RM0.03 - RM0.08</b> setiap KM."
+        },
+        zh: {
+            title: "Lala 利润计算器", set: "配置", order: "订单", fuel: "油费", maint: "保养",
+            fare: "金额", dist: "距离", tGross: "订单总额", tComm: "平台抽成 (21%)", tTake: "实得金额 (79%)",
+            tCost: "总成本", tNet: "纯利润", disc: "仅供参考。实际利润受交通、过路费等影响。",
+            vBad: "❌ 亏本", vNeu: "⚠️ 利润较低", vGood: "✅ 优质订单",
+            fuelGuide: "<b>计算公式：</b> 油价 (RM/L) ÷ 油耗 (KM/L)。<br><br><i>例子：</i> RM2.05 ÷ 10 KM/L = <b>RM0.21/KM</b>",
+            maintGuide: "<b>包含：</b> 轮胎、黑油、维修费。<br><br>通常老车建议设在 <b>RM0.05 - RM0.10</b> 之间。"
+        }
+    };
+
+    let currentLang = localStorage.getItem('lang') || 'en';
+
+    function showModal(type) {
+        const t = i18n[currentLang];
+        document.getElementById('modal-title').innerText = type === 'fuel' ? t.fuel : t.maint;
+        document.getElementById('modal-body').innerHTML = type === 'fuel' ? t.fuelGuide : t.maintGuide;
+        document.getElementById('infoModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('infoModal').style.display = 'none';
+    }
+
+    function setLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('lang', lang);
+        document.getElementById('langSelect').value = lang;
+        updateUI();
+        calculate();
+    }
+
+    function updateUI() {
+        const t = i18n[currentLang];
+        document.getElementById('ui-title').innerText = t.title;
+        document.getElementById('ui-set-title').innerText = t.set;
+        document.getElementById('ui-order-title').innerText = t.order;
+        document.getElementById('ui-fuel').innerText = t.fuel;
+        document.getElementById('ui-maint').innerText = t.maint;
+        document.getElementById('ui-fare').innerText = t.fare;
+        document.getElementById('ui-dist').innerText = t.dist;
+        document.getElementById('ui-t-gross').innerText = t.tGross;
+        document.getElementById('ui-t-comm').innerText = t.tComm;
+        document.getElementById('ui-t-take').innerText = t.tTake;
+        document.getElementById('ui-t-cost').innerText = t.tCost;
+        document.getElementById('ui-t-net').innerText = t.tNet;
+        document.getElementById('ui-disclaimer').innerText = t.disc;
+    }
+
+    window.onload = function() {
+        if(localStorage.getItem('fuelCost')) document.getElementById('fuelCost').value = localStorage.getItem('fuelCost');
+        if(localStorage.getItem('maintCost')) document.getElementById('maintCost').value = localStorage.getItem('maintCost');
+        setLang(currentLang);
+    };
+
+    function saveAndCalc() {
+        localStorage.setItem('fuelCost', document.getElementById('fuelCost').value);
+        localStorage.setItem('maintCost', document.getElementById('maintCost').value);
+        calculate();
+    }
+
+    function calculate() {
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        const distance = parseFloat(document.getElementById('distance').value) || 0;
+        const fuel = parseFloat(document.getElementById('fuelCost').value) || 0;
+        const maint = parseFloat(document.getElementById('maintCost').value) || 0;
+        if (amount > 0 && distance > 0) {
+            const comm = amount * 0.21;
+            const takeHome = amount * 0.79;
+            const totalCost = distance * (fuel + maint);
+            const netProfit = takeHome - totalCost;
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('grossVal').innerText = 'RM ' + amount.toFixed(2);
+            document.getElementById('commVal').innerText = '- RM ' + comm.toFixed(2);
+            document.getElementById('takeHomeVal').innerText = 'RM ' + takeHome.toFixed(2);
+            document.getElementById('costVal').innerText = '- RM ' + totalCost.toFixed(2);
+            document.getElementById('profitText').innerText = 'RM ' + netProfit.toFixed(2);
+            const v = document.getElementById('verdictBox');
+            const t = i18n[currentLang];
+            if (netProfit <= 0) { v.innerText = t.vBad; v.className = "verdict bad"; }
+            else if (netProfit < 5) { v.innerText = t.vNeu; v.className = "verdict neutral"; }
+            else { v.innerText = t.vGood; v.className = "verdict good"; }
+        } else {
+            document.getElementById('resultArea').style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
