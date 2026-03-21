@@ -107,7 +107,7 @@
     const i18n = {
         en: {
             title: "Lala Profit Calc", set: "Settings", order: "Order", fuel: "Fuel", maint: "Maintenance",
-            fare: "Fare", dist: "Distance", tGross: "Total Fare (Gross)", tComm: "Comm. (20%)", tSst: "SST (8%)", tTake: "Take-Home",
+            fare: "Fare", dist: "Distance", tGross: "Total Fare (Gross)", tComm: "Commission", tSst: "SST (8%)", tTake: "Take-Home",
             tCost: "Total Costs", tNet: "NET PROFIT", disc: "Estimates for reference only.",
             vBad: "❌ LOSS", vNeu: "⚠️ LOW PROFIT", vGood: "✅ GOOD TO GO",
             fuelGuide: "<b>Formula:</b> Fuel Price (RM/L) ÷ Fuel Economy (KM/L).",
@@ -115,7 +115,7 @@
         },
         ms: {
             title: "Kalkulator Untung", set: "Tetapan", order: "Pesanan", fuel: "Petrol", maint: "Senggara",
-            fare: "Tambang", dist: "Jarak", tGross: "Jumlah Tambang", tComm: "Komisyen (20%)", tSst: "SST (8%)", tTake: "Pendapatan Bersih",
+            fare: "Tambang", dist: "Jarak", tGross: "Jumlah Tambang", tComm: "Komisyen", tSst: "SST (8%)", tTake: "Pendapatan Bersih",
             tCost: "Jumlah Kos", tNet: "UNTUNG BERSIH", disc: "Anggaran sahaja.",
             vBad: "❌ RUGI", vNeu: "⚠️ UNTUNG RENDAH", vGood: "✅ BERBALOI",
             fuelGuide: "<b>Formula:</b> Harga Petrol ÷ Penggunaan Petrol.",
@@ -123,7 +123,7 @@
         },
         zh: {
             title: "Lala 利润计算器", set: "配置", order: "订单", fuel: "油费", maint: "保养",
-            fare: "金额", dist: "距离", tGross: "订单总额", tComm: "平台抽成 (20%)", tSst: "SST (8%)", tTake: "实得金额",
+            fare: "金额", dist: "距离", tGross: "订单总额", tComm: "平台抽成", tSst: "SST (8%)", tTake: "实得金额",
             tCost: "总成本", tNet: "纯利润", disc: "仅供参考。实际利润受交通影响。",
             vBad: "❌ 亏本", vNeu: "⚠️ 利润较低", vGood: "✅ 优质订单",
             fuelGuide: "<b>计算公式：</b> 油价 (RM/L) ÷ 油耗 (KM/L)。",
@@ -187,7 +187,10 @@
         const maint = parseFloat(document.getElementById('maintCost').value) || 0;
         
         if (amount > 0 && distance > 0) {
-            const platformFee = amount * 0.20;
+            // Apply 10% commission for long haul (40km+), 20% otherwise
+            const commissionRate = distance >= 40 ? 0.10 : 0.20;
+            const platformFee = amount * commissionRate;
+            const commissionPercent = Math.round(commissionRate * 100);
             const sst = platformFee * 0.08;
             const takeHome = amount - (platformFee + sst);
             const totalCost = distance * (fuel + maint);
@@ -195,6 +198,7 @@
             
             document.getElementById('resultArea').style.display = 'block';
             document.getElementById('grossVal').innerText = 'RM ' + amount.toFixed(2);
+            document.getElementById('ui-t-comm').innerText = `Commission (${commissionPercent}%)`;
             document.getElementById('commVal').innerText = '- RM ' + platformFee.toFixed(2);
             document.getElementById('sstVal').innerText = '- RM ' + sst.toFixed(2);
             document.getElementById('takeHomeVal').innerText = 'RM ' + takeHome.toFixed(2);
